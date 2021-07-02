@@ -26,7 +26,8 @@ function App() {
 
   let web3 = new Web3(Web3.givenProvider)
   const everTikiContractAddress = "0x4cdd7d86be67b90ee46757d7b6e5a5cab8cfb3cd"
-  const tikiSwapContractAddress = "0x64c7B8B807D034Ff58dED40c3F6B64DD824F2515"
+  const tikiSwapContractAddress = "0x31119F370e61813b59782D7D855B909717B802f0"
+  // const tikiSwapContractAddress = "0x64c7B8B807D034Ff58dED40c3F6B64DD824F2515"
 
   const everTikiContract = new web3.eth.Contract(everTikiAbi, everTikiContractAddress);
   const tikiSwapcontract = new web3.eth.Contract(tikiSwapAbi, tikiSwapContractAddress);
@@ -101,20 +102,33 @@ function App() {
     const {value} = e.target;
     setSwapData({
       pay: value,
-      receive: value * 1.25
+      receive: value * 1
     })
   }
 
-  const swap = (e) => {
+  const swap = async (e) => {
     e.preventDefault();
     
-    alert("all good! swap functionality implementation next")
+    // alert("all good! swap functionality implementation next");
+    const userAmount = web3.utils.toWei((swapData.pay).toString(), 'ether')
+    const exchange = await tikiSwapcontract.methods.exchangeTik(userAmount.toString()).send({
+      from: userAccount.address,
+      gasLimit: 1000000,
+      gasPrice: web3.utils.toWei('10', 'gwei'),
+    })
   }
 
 
   const getApproval = async (e) => {
     e.preventDefault();
-    const approval = await everTikiContract.methods.approve(userAccount.address, swapData.pay).send({from: userAccount.address})
+    const userAmount = web3.utils.toWei((swapData.pay).toString(), 'ether')
+    // const approval = await everTikiContract.methods.approve(tikiSwapContractAddress, userAmount.toString()) 1000000000000000000
+    const UserBalance = await everTikiContract.methods.balanceOf(userAccount.address).call();
+    const approval = await everTikiContract.methods.approve(tikiSwapContractAddress, UserBalance.toString()).send({
+      from: userAccount.address,
+      // gasLimit: 1000000,
+      // gasPrice: web3.utils.fromWei('10', 'gwei'),
+    })
     
     if(approval.status === true) setApproveState(true)
   }
