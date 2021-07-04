@@ -29,7 +29,7 @@ function App() {
 
   let web3 = new Web3(Web3.givenProvider)
   const everTikiContractAddress = "0x4cdd7d86be67b90ee46757d7b6e5a5cab8cfb3cd"
-  const tikiSwapContractAddress = "0x4Ac6b63493C4AC1dab8A04292D725d6A38b859dF"
+  const tikiSwapContractAddress = "0x6A0D669526D03C4e15F48062A75A8E58124D9aC6"
   // const tikiSwapContractAddress = "0x64c7B8B807D034Ff58dED40c3F6B64DD824F2515"
 
   const everTikiContract = new web3.eth.Contract(everTikiAbi, everTikiContractAddress);
