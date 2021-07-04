@@ -37,7 +37,7 @@ function App() {
 
   const getConnectedAccount = async () => {
 
-    const previouslyDisconected = sessionStorage.getItem("disconnected");
+    const previouslyDisconected = localStorage.getItem("disconnected");
     
     if(previouslyDisconected === "true") return;
 
@@ -86,7 +86,7 @@ function App() {
       address: address
     })
 
-    sessionStorage.setItem("disconnected", "false")
+    localStorage.setItem("disconnected", "false")
 
   }
   
@@ -202,7 +202,7 @@ function App() {
       tikiBalance: 0,
       address: null
     })
-    sessionStorage.setItem("disconnected", "true")
+    localStorage.setItem("disconnected", "true")
   }
 
   
