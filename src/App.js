@@ -2,6 +2,7 @@ import {useState, useEffect} from 'react';
 import {MdAccountBalanceWallet} from 'react-icons/md';
 import {GiTwoCoins} from 'react-icons/gi';
 import {BsCaretDown} from 'react-icons/bs';
+import {ImSpinner9} from 'react-icons/im'
 import Web3 from "web3"
 import {everTikiAbi, tikiSwapAbi} from './abi'
 
@@ -17,16 +18,18 @@ function App() {
   })
 
   const [swapData, setSwapData] = useState({
-    pay: 0,
-    receive: 0
+    pay: "",
+    receive: ""
   })
 
   const [approveState, setApproveState] = useState(false)
 
+  const [trxOngoing, setTrxOngoing] = useState(false)
+
 
   let web3 = new Web3(Web3.givenProvider)
   const everTikiContractAddress = "0x4cdd7d86be67b90ee46757d7b6e5a5cab8cfb3cd"
-  const tikiSwapContractAddress = "0x31119F370e61813b59782D7D855B909717B802f0"
+  const tikiSwapContractAddress = "0x4Ac6b63493C4AC1dab8A04292D725d6A38b859dF"
   // const tikiSwapContractAddress = "0x64c7B8B807D034Ff58dED40c3F6B64DD824F2515"
 
   const everTikiContract = new web3.eth.Contract(everTikiAbi, everTikiContractAddress);
@@ -78,13 +81,22 @@ function App() {
     })
 
   }
+  
 
   // ensure only numbers ans floating point numbers can be entered
   const validateInput = (e) => {
+
     const charCode = (e.which) ? e.which : e.keyCode;
 
     if(charCode >= 48 && charCode <= 57) {
-        return true;
+
+      // if the user tries to enter leading zeros continuosly
+      if(charCode === 48 && parseFloat(swapData.pay) === 0) {
+        e.preventDefault()
+        return false;
+      }
+
+      return true;
     }
     else if(charCode === 46 && swapData.pay.length && swapData.pay.toString().indexOf(".") === -1) {
         //allow the "." character only if it's not there before
@@ -100,37 +112,63 @@ function App() {
 
   const onChangePay = (e) => {
     const {value} = e.target;
-    setSwapData({
-      pay: value,
-      receive: value * 1
-    })
+      setSwapData({
+        pay: value,
+        receive: value * 1
+      })
+    
   }
 
   const swap = async (e) => {
     e.preventDefault();
-    
     // alert("all good! swap functionality implementation next");
     const userAmount = web3.utils.toWei((swapData.pay).toString(), 'ether')
     const exchange = await tikiSwapcontract.methods.exchangeTik(userAmount.toString()).send({
       from: userAccount.address,
       gasLimit: 1000000,
       gasPrice: web3.utils.toWei('10', 'gwei'),
+    }, (err, transactionHash) => {
+      if(transactionHash) setTrxOngoing(true)
     })
+
+    if(exchange.status === true) {
+      // reset the swap data state
+      setSwapData({
+        pay: 0,
+        receive: 0
+      })
+      setApproveState(false)
+      setTrxOngoing(false)
+    }
   }
 
 
   const getApproval = async (e) => {
     e.preventDefault();
-    const userAmount = web3.utils.toWei((swapData.pay).toString(), 'ether')
+  
+    const amount = web3.utils.toWei((swapData.pay).toString(), 'ether')
     // const approval = await everTikiContract.methods.approve(tikiSwapContractAddress, userAmount.toString()) 1000000000000000000
-    const UserBalance = await everTikiContract.methods.balanceOf(userAccount.address).call();
-    const approval = await everTikiContract.methods.approve(tikiSwapContractAddress, UserBalance.toString()).send({
+    const approval = await everTikiContract.methods.approve(tikiSwapContractAddress, amount.toString()).send({
       from: userAccount.address,
       // gasLimit: 1000000,
       // gasPrice: web3.utils.fromWei('10', 'gwei'),
+    }, (err, transactionHash) => {
+      if(transactionHash) setTrxOngoing(true)
     })
     
-    if(approval.status === true) setApproveState(true)
+    if(approval.status === true) {
+      setApproveState(true)
+      setTrxOngoing(false)
+    }
+
+  }
+
+  const useMaxBalance = (e) => {
+    e.preventDefault();
+    setSwapData({
+      pay: userAccount.tikiBalance,
+      receive: userAccount.tikiBalance * 1
+    })
   }
 
   
@@ -157,12 +195,13 @@ function App() {
           </nav>
           {/* user account details or connect buttton */}
           {userAccount.address ?
-          <div className = "bg-dark border-2 border-light rounded p-2 flex">
-            <p className = "text-base flex mr-4 items-center"><GiTwoCoins className = "mr-1" /> {`${userAccount.bnbBalance}BNB`}</p>
-            <p className = "text-base flex mr-4 items-center"><GiTwoCoins className = "mr-1" /> {`${userAccount.tikiBalance}TK`}</p>
+          <div className = "bg-dark border-2 border-light rounded-full px-2 py-1 flex">
+            <p className = "text-base flex mr-4 items-center"><GiTwoCoins className = "mr-1" /> {`${Number(userAccount.bnbBalance).toFixed(3)}BNB`}</p>
+            <p className = "text-base flex mr-4 items-center"><GiTwoCoins className = "mr-1" /> {`${Number(userAccount.tikiBalance).toFixed(3)}TK`}</p>
             <p className = "text-base pt-1 flex items-center"><MdAccountBalanceWallet className = "mr-1" />{`${userAccount.address.substring(0, 5)}...${userAccount.address.substring(userAccount.address.length - 4, userAccount.address.length)}`}</p>
+            {/* <button className = "bg-red p-2 ml-2 font-semibold rounded-full shadow-md hover:bg-red-dark focus:outline-none">Disconnect</button> */}
           </div> :
-          <button className = "px-5 py-3 bg-light text-lighter rounded rounded-full" onClick = {connectWallet}>Connect</button>
+          <button className = "px-3 py-2 bg-light hover:text-lighter rounded-lg font-bold" onClick = {connectWallet}>Connect</button>
           }
           
         </header>
@@ -175,21 +214,25 @@ function App() {
         <div className = "action-card w-2/5 p-5 shadow-lg rounded bg-light mx-auto mt-20">
           <h1 className = "">SWAP NOW</h1>
           <p className = "mb-5 text-sm">Swap xxxx for xxxx</p>
-          <form onSubmit = {swapData.pay != 0 ? !userAccount.address ? connectWallet : approveState ? swap : getApproval : null}>
+          <form onSubmit = {swapData.pay !== 0 ? !userAccount.address ? connectWallet : approveState ? swap : getApproval : null}>
 
-            <div className = "flex flex-col mb-5" >
-              <label htmlFor = "you-pay" className = "text-lighter mb-2">You Pay</label>
-              <input type = "text" onChange = {onChangePay} onKeyPress = {validateInput} value = {swapData.pay} id = "you-pay" className = "bg-lighter p-2 rounded" />
+            <div className = "flex flex-col mb-5 relative" >
+              <label htmlFor = "from" className = "text-lighter mb-2">From</label>
+              <input type = "text" onChange = {onChangePay} placeholder = "0" onKeyPress = {validateInput} value = {swapData.pay} id = "from" className = "bg-lighter p-2 rounded placeholder-placeholder-color pr-20" />
+              <button onClick = {useMaxBalance} disabled = {userAccount.address === null} className = { userAccount.address ? `p-1 bg-dark rounded text-bold cursor-ponter d-inline absolute bottom-1 right-1 p-2 text-xs font-semibold hover:text-lighter` : "p-1 bg-dark rounded text-bold d-inline absolute bottom-1 right-1 p-2 text-xs font-semibold text-lighter cursor-not-allowed"}>MAX</button>
             </div>
             
             <BsCaretDown className = "mx-auto text-lg" />
 
             <div className = "flex flex-col mt-3" >
-              <label htmlFor = "you-receive" className = "text-lighter mb-2">You receive</label>
-              <input type = "text" value = {swapData.receive} readOnly id = "you-receive" className = "bg-lighter p-2 rounded focus:border-lighter" />
+              <label htmlFor = "to" className = "text-lighter mb-2">To</label>
+              <input type = "text" value = {swapData.receive} readOnly placeholder = "0" id = "to" className = "bg-lighter p-2 rounded focus:border-lighter placeholder-placeholder-color" />
             </div>
 
-            <input type = "submit" className = "bg-dark p-2 rounded w-full mt-10 text-lighter text-bold cursor-pointer shadow-lg py-4" value = {swapData.pay != 0 ? !userAccount.address ? "Connect Wallet" : approveState ? "Swap" : "Approve" : "enter amount"} disabled = {swapData.pay == 0} />
+            <button type = "submit" className = "bg-dark p-2 rounded w-full mt-10 text-lighter text-bold cursor-pointer shadow-lg py-4" disabled = {swapData.pay === 0}>
+              {swapData.pay && swapData.pay !== "0" ?
+              trxOngoing ? <ImSpinner9 className = "animate-spin mx-auto" /> : !userAccount.address ? "Connect Wallet" : approveState ? "Swap" : "Approve" : 
+              "enter amount"}</button>
             
           </form>
         </div>

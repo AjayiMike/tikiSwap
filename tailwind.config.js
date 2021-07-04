@@ -15,7 +15,9 @@ module.exports = {
     backgroundColor: theme => ({
       'dark': '#132c44',
       'light': '#275a8c',
-      'lighter': '#73a7d8'
+      'lighter': '#73a7d8',
+      'red': '#f43f5e',
+      'red-dark': '#ca0c2c'
     }),
     borderColor: theme => ({
       'dark': '#132c44',
@@ -25,11 +27,13 @@ module.exports = {
     backgroundImage: theme => ({
       'image-left': "url('/src/images/image-left.png')",
       'image-right': "url('/src/images/image-right.png')",
-     }),
+    }),
     colors: {
       'dark': '#132c44',
       'light': '#275a8c',
-      'lighter': '#73a7d8'
+      'lighter': '#73a7d8',
+      'placeholder-color': '#eee'
+
     }
   },
   variants: {
