@@ -1,4 +1,4 @@
-import {useState, useEffect} from 'react';
+import {useState, useEffect, useRef} from 'react';
 import {MdAccountBalanceWallet} from 'react-icons/md';
 import {GiTwoCoins} from 'react-icons/gi';
 import {BsCaretDown} from 'react-icons/bs';
@@ -26,6 +26,9 @@ function App() {
 
   const [trxOngoing, setTrxOngoing] = useState(false)
 
+  const payInput = useRef(null);
+  const maxButton = useRef(null);
+  const submitButton = useRef(null);
 
   let web3 = new Web3(Web3.givenProvider)
   const everTikiContractAddress = "0x4cdd7d86be67b90ee46757d7b6e5a5cab8cfb3cd"
@@ -66,6 +69,8 @@ function App() {
 
 
   const connectWallet = async (e) => {
+
+    
     e.preventDefault()
     const [address] = await window.ethereum.request({ method: 'eth_requestAccounts' });
     
@@ -119,7 +124,9 @@ function App() {
 
 
   const onChangePay = (e) => {
-    const {value} = e.target;
+    let {value} = e.target;
+    const parsedValue = parseInt(value).toString();
+    if(parsedValue !== "0" && value.startsWith("0")) value = value.substr(1)
       setSwapData({
         pay: value,
         receive: value * 1
@@ -128,46 +135,102 @@ function App() {
   }
 
   const swap = async (e) => {
+
     e.preventDefault();
     // alert("all good! swap functionality implementation next");
     const userAmount = web3.utils.toWei((swapData.pay).toString(), 'ether')
-    const exchange = await tikiSwapcontract.methods.exchangeTik(userAmount.toString()).send({
-      from: userAccount.address,
-      gasLimit: 1000000,
-      gasPrice: web3.utils.toWei('10', 'gwei'),
-    }, (err, transactionHash) => {
-      if(transactionHash) setTrxOngoing(true)
-    })
 
-    if(exchange.status === true) {
-      // reset the swap data state
-      setSwapData({
-        pay: 0,
-        receive: 0
+    try {
+      const exchange = await tikiSwapcontract.methods.exchangeTik(userAmount.toString()).send({
+        from: userAccount.address,
+        gasLimit: 1000000,
+        gasPrice: web3.utils.toWei('10', 'gwei'),
+      }, (err, transactionHash) => {
+        if(!err && transactionHash) {
+          payInput.current.readOnly = true;
+          maxButton.current.disabled = true;
+          submitButton.current.disabled = true
+
+          setTrxOngoing(true)
+        } 
       })
-      setApproveState(false)
-      setTrxOngoing(false)
-    }
+      if(exchange.status === true) {
+        // a success alert
+
+        // reset the swap data state
+        setSwapData({
+          pay: 0,
+          receive: 0
+        })
+
+        setApproveState(false)
+      } else {
+        // the other alert
+
+        // reset the swap data state
+        setSwapData({
+          pay: 0,
+          receive: 0
+        })
+
+        setApproveState(false)
+      }
+    } catch(err) {
+
+        // error alert
+        alert("something went wrong!")
+
+      }finally {
+    
+        payInput.current.readOnly = false;
+        maxButton.current.disabled = false;
+        submitButton.current.disabled = false;
+        setTrxOngoing(false)
+
+      }
+    
   }
 
 
   const getApproval = async (e) => {
+
     e.preventDefault();
   
     const amount = web3.utils.toWei((swapData.pay).toString(), 'ether')
     // const approval = await everTikiContract.methods.approve(tikiSwapContractAddress, userAmount.toString()) 1000000000000000000
-    const approval = await everTikiContract.methods.approve(tikiSwapContractAddress, amount.toString()).send({
-      from: userAccount.address,
-      // gasLimit: 1000000,
-      // gasPrice: web3.utils.fromWei('10', 'gwei'),
-    }, (err, transactionHash) => {
-      if(transactionHash) setTrxOngoing(true)
-    })
-    
-    if(approval.status === true) {
-      setApproveState(true)
-      setTrxOngoing(false)
+
+    try {
+      const approval = await everTikiContract.methods.approve(tikiSwapContractAddress, amount.toString()).send({
+        from: userAccount.address,
+        // gasLimit: 1000000,
+        // gasPrice: web3.utils.fromWei('10', 'gwei'),
+      }, (err, transactionHash) => {
+        if(!err && transactionHash) {
+
+          payInput.current.readOnly = true;
+          maxButton.current.disabled = true;
+          submitButton.current.disabled = true
+
+          setTrxOngoing(true)
+        }
+      })
+  
+      console.log("tyitrjijweo: ", approval)
+      
+      if(approval.status === true) {
+        setApproveState(true)
+        setTrxOngoing(false)
+      }
+    } catch(err) {
+      console.log("errorrr: ", err)
+    } finally {
+
+        payInput.current.readOnly = false;
+        maxButton.current.disabled = false;
+        submitButton.current.disabled = false
+
     }
+    
 
   }
 
@@ -213,7 +276,7 @@ function App() {
       getConnectedAccount()
     }
     
-    
+    // eslint-disable-next-line
   },[])
 
 
@@ -258,8 +321,8 @@ function App() {
 
             <div className = "flex flex-col mb-5 relative" >
               <label htmlFor = "from" className = "text-lighter mb-2">From</label>
-              <input type = "text" onChange = {onChangePay} placeholder = "0" onKeyPress = {validateInput} value = {swapData.pay} id = "from" className = "bg-lighter p-2 rounded placeholder-placeholder-color pr-20" />
-              <button onClick = {useMaxBalance} disabled = {userAccount.address === null} className = { userAccount.address ? `p-1 bg-dark rounded text-bold cursor-ponter d-inline absolute bottom-1 right-1 p-2 text-xs font-semibold hover:text-lighter` : "p-1 bg-dark rounded text-bold d-inline absolute bottom-1 right-1 p-2 text-xs font-semibold text-lighter cursor-not-allowed"}>MAX</button>
+              <input type = "text" ref = {payInput} onChange = {onChangePay} placeholder = "0" onKeyPress = {validateInput} value = {swapData.pay} id = "from" className = "bg-lighter p-2 rounded placeholder-placeholder-color pr-20" />
+              <button onClick = {useMaxBalance} ref = {maxButton} disabled = {userAccount.address === null} className = { userAccount.address ? `p-1 bg-dark rounded text-bold cursor-ponter d-inline absolute bottom-1 right-1 p-2 text-xs font-semibold hover:text-lighter` : "p-1 bg-dark rounded text-bold d-inline absolute bottom-1 right-1 p-2 text-xs font-semibold text-lighter cursor-not-allowed"}>MAX</button>
             </div>
             
             <BsCaretDown className = "mx-auto text-lg" />
@@ -269,7 +332,7 @@ function App() {
               <input type = "text" value = {swapData.receive} readOnly placeholder = "0" id = "to" className = "bg-lighter p-2 rounded focus:border-lighter placeholder-placeholder-color" />
             </div>
 
-            <button type = "submit" className = "bg-dark p-2 rounded w-full mt-10 text-lighter text-bold cursor-pointer shadow-lg py-4" disabled = {swapData.pay === 0}>
+            <button type = "submit" ref = {submitButton} className = "bg-dark p-2 rounded w-full mt-10 text-lighter text-bold cursor-pointer shadow-lg py-4" disabled = {swapData.pay === 0}>
               {swapData.pay && swapData.pay !== "0" ?
               trxOngoing ? <ImSpinner9 className = "animate-spin mx-auto" /> : !userAccount.address ? "Connect Wallet" : approveState ? "Swap" : "Approve" : 
               "enter amount"}</button>
