@@ -17,7 +17,8 @@ module.exports = {
       'light': '#275a8c',
       'lighter': '#73a7d8',
       'red': '#f43f5e',
-      'red-dark': '#ca0c2c'
+      'red-dark': '#ca0c2c',
+      'white': '#ffffff'
     }),
     borderColor: theme => ({
       'dark': '#132c44',
