@@ -217,7 +217,7 @@ function App() {
           {/* user account details or connect buttton */}
           {userAccount.address ?
           <>
-          <div className = "bg-dark border-2 border-light rounded-full px-2 py-1 flex">
+          <div className = "bg-dark border-2 border-light rounded-full pl-2 py-1 pr-1 flex">
             <p className = "text-base flex mr-4 items-center"><GiTwoCoins className = "mr-1" /> {`${Number(userAccount.bnbBalance).toFixed(3)}BNB`}</p>
             <p className = "text-base flex mr-4 items-center"><GiTwoCoins className = "mr-1" /> {`${Number(userAccount.tikiBalance).toFixed(3)}TK`}</p>
             <p className = "text-base pt-1 flex items-center"><MdAccountBalanceWallet className = "mr-1" />{`${userAccount.address.substring(0, 5)}...${userAccount.address.substring(userAccount.address.length - 4, userAccount.address.length)}`}</p>
