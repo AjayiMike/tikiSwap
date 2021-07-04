@@ -36,24 +36,30 @@ function App() {
   const tikiSwapcontract = new web3.eth.Contract(tikiSwapAbi, tikiSwapContractAddress);
 
   const getConnectedAccount = async () => {
+
+    const previouslyDisconected = sessionStorage.getItem("disconnected");
     
-    let [address] = await web3.eth.getAccounts()
+    if(previouslyDisconected === "true") return;
+
+      let [address] = await web3.eth.getAccounts()
     
-    if(!address) return;
-    // get balance
-    const bnbBalance = await web3.eth.getBalance(address);
-    const tikiBalance = await everTikiContract.methods.balanceOf(address).call();
+      if(!address) return;
+      // get balance
+      const bnbBalance = await web3.eth.getBalance(address);
+      const tikiBalance = await everTikiContract.methods.balanceOf(address).call();
 
-    // convert them
-    const convertedBnb = web3.utils.fromWei(bnbBalance.toString(), "ether");
-    const convertedTiki = web3.utils.fromWei(tikiBalance.toString(), "ether");
+      // convert them
+      const convertedBnb = web3.utils.fromWei(bnbBalance.toString(), "ether");
+      const convertedTiki = web3.utils.fromWei(tikiBalance.toString(), "ether");
 
 
-    setUserAccount({
-      tikiBalance: convertedTiki,
-      bnbBalance: convertedBnb,
-      address: address
-    })
+      setUserAccount({
+        tikiBalance: convertedTiki,
+        bnbBalance: convertedBnb,
+        address: address
+      })
+
+   
 
   }
 
@@ -79,6 +85,8 @@ function App() {
       bnbBalance: convertedBnb,
       address: address
     })
+
+    sessionStorage.setItem("disconnected", "false")
 
   }
   
@@ -189,17 +197,24 @@ function App() {
 
   const disconnectWallet = (e) => {
     e.preventDefault();
-    alert("Disconnected")
+    setUserAccount({
+      bnbBalance: 0,
+      tikiBalance: 0,
+      address: null
+    })
+    sessionStorage.setItem("disconnected", "true")
   }
 
   
 
 
   useEffect(() => {
-
-    getConnectedAccount()
+    if(window.ethereum || window.web3) {
+      getConnectedAccount()
+    }
     
-  })
+    
+  },[])
 
 
   return (
