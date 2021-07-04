@@ -171,6 +171,27 @@ function App() {
     })
   }
 
+  const addToWallet = async (e) => {
+    e.preventDefault();
+
+    await window.ethereum.request({
+      method: 'wallet_watchAsset',
+      params: {
+        type: 'ERC20',
+        options: {
+          address: "0x4cdd7d86be67b90ee46757d7b6e5a5cab8cfb3cd",
+          symbol: "EVERTIKI",
+          decimals: 18,
+        },
+      },
+    });
+  }
+
+  const disconnectWallet = (e) => {
+    e.preventDefault();
+    alert("Disconnected")
+  }
+
   
 
 
@@ -200,9 +221,9 @@ function App() {
             <p className = "text-base flex mr-4 items-center"><GiTwoCoins className = "mr-1" /> {`${Number(userAccount.bnbBalance).toFixed(3)}BNB`}</p>
             <p className = "text-base flex mr-4 items-center"><GiTwoCoins className = "mr-1" /> {`${Number(userAccount.tikiBalance).toFixed(3)}TK`}</p>
             <p className = "text-base pt-1 flex items-center"><MdAccountBalanceWallet className = "mr-1" />{`${userAccount.address.substring(0, 5)}...${userAccount.address.substring(userAccount.address.length - 4, userAccount.address.length)}`}</p>
-            {/* <button className = "bg-red p-2 ml-2 font-semibold rounded-full shadow-md hover:bg-red-dark focus:outline-none">Disconnect</button> */}
+            <button className = "bg-red p-2 ml-2 font-semibold rounded-full shadow-md hover:bg-red-dark focus:outline-none" onClick = {disconnectWallet}>Disconnect</button>
           </div>
-          <a href = "https://bit.ly/3yhgSqo" className = "px-3 py-2 bg-light hover:text-lighter rounded-lg test-xs bg-white text-dark text-bold" target = "_blank">Add to wallet</a> 
+          <button className = "px-3 py-2 bg-light hover:text-lighter rounded-lg test-xs bg-white text-dark text-bold" onClick = {addToWallet}>Add to wallet</button> 
           </>
           :
           <button className = "px-3 py-2 bg-light hover:text-lighter rounded-lg font-bold" onClick = {connectWallet}>Connect</button>
